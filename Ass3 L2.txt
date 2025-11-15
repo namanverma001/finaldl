@@ -1,0 +1,137 @@
+# ---------------------------------------------------------
+# ASSIGNMENT 3: Experiment with Regularization Techniques
+#
+# • Train a model with and without L2 regularization.
+# • Add Dropout and compare performance.
+# • Visualize training/validation loss and accuracy.
+# ---------------------------------------------------------
+
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ---------------------------
+# LOAD FASHION-MNIST DATA
+# ---------------------------
+from tensorflow.keras.datasets import fashion_mnist
+(x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+
+# Normalize data between 0–1
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+
+# Flatten images to 784-dim vectors
+x_train = x_train.reshape(-1, 784)
+x_test = x_test.reshape(-1, 784)
+
+# =========================================================
+# BASE MODEL (NO REGULARIZATION)
+# =========================================================
+# Build model layer-by-layer
+model_base = tf.keras.Sequential([
+    tf.keras.layers.Dense(256, activation='relu', input_shape=(784,)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+
+# Compile model
+model_base.compile(optimizer='adam',
+                   loss='sparse_categorical_crossentropy',
+                   metrics=['accuracy'])
+
+# Train model
+history_base = model_base.fit(
+    x_train, y_train,
+    epochs=10,
+    batch_size=32,
+    validation_data=(x_test, y_test),
+    verbose=1
+)
+
+# =========================================================
+# L2 REGULARIZED MODEL
+# =========================================================
+reg = tf.keras.regularizers.l2(0.001)
+
+model_l2 = tf.keras.Sequential([
+    tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=reg, input_shape=(784,)),
+    tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=reg),
+    tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=reg),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+
+model_l2.compile(optimizer='adam',
+                 loss='sparse_categorical_crossentropy',
+                 metrics=['accuracy'])
+
+history_l2 = model_l2.fit(
+    x_train, y_train,
+    epochs=10,
+    batch_size=32,
+    validation_data=(x_test, y_test),
+    verbose=1
+)
+
+# =========================================================
+# DROPOUT MODEL
+# =========================================================
+model_drop = tf.keras.Sequential([
+    tf.keras.layers.Dense(256, activation='relu', input_shape=(784,)),
+    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+
+model_drop.compile(optimizer='adam',
+                   loss='sparse_categorical_crossentropy',
+                   metrics=['accuracy'])
+
+history_drop = model_drop.fit(
+    x_train, y_train,
+    epochs=10,
+    batch_size=32,
+    validation_data=(x_test, y_test),
+    verbose=1
+)
+
+# =========================================================
+# EVALUATE ALL MODELS
+# =========================================================
+acc_base = model_base.evaluate(x_test, y_test, verbose=0)[1]
+acc_l2 = model_l2.evaluate(x_test, y_test, verbose=0)[1]
+acc_drop = model_drop.evaluate(x_test, y_test, verbose=0)[1]
+
+print("Base Accuracy:", acc_base)
+print("L2 Regularized Accuracy:", acc_l2)
+print("Dropout Accuracy:", acc_drop)
+
+# =========================================================
+# PLOT ACCURACY AND LOSS CURVES
+# =========================================================
+plt.figure(figsize=(12, 5))
+
+# Validation Accuracy Comparison
+plt.subplot(1, 2, 1)
+plt.plot(history_base.history['val_accuracy'], label='Base')
+plt.plot(history_l2.history['val_accuracy'], label='L2')
+plt.plot(history_drop.history['val_accuracy'], label='Dropout')
+plt.title("Validation Accuracy")
+plt.xlabel("Epoch")
+plt.ylabel("Accuracy")
+plt.legend()
+
+# Validation Loss Comparison
+plt.subplot(1, 2, 2)
+plt.plot(history_base.history['val_loss'], label='Base')
+plt.plot(history_l2.history['val_loss'], label='L2')
+plt.plot(history_drop.history['val_loss'], label='Dropout')
+plt.title("Validation Loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.legend()
+
+plt.show()

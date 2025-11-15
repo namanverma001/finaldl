@@ -1,0 +1,84 @@
+# ---------------------------------------------------------
+# ASSIGNMENT 4: Compare Activation Functions in Neural Networks
+#
+# • Build a model using ONE activation function.
+# • Train it and plot accuracy + loss curves.
+# • Repeat separately for sigmoid / tanh / relu.
+# ---------------------------------------------------------
+
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# LOAD DATA
+# -----------------------------
+from tensorflow.keras.datasets import fashion_mnist
+(x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+
+# Normalize + Flatten
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+x_train = x_train.reshape(-1, 784)
+x_test = x_test.reshape(-1, 784)
+
+# -----------------------------
+# CHOOSE ACTIVATION FUNCTION HERE
+# -----------------------------
+activation_function = 'relu'    # change to 'sigmoid' or 'tanh'
+
+# -----------------------------
+# BUILD MODEL
+# -----------------------------
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(256, activation=activation_function, input_shape=(784,)),
+    tf.keras.layers.Dense(128, activation=activation_function),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+
+# Compile
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# -----------------------------
+# TRAIN MODEL
+# -----------------------------
+history = model.fit(
+    x_train, y_train,
+    epochs=10,
+    batch_size=128,
+    validation_data=(x_test, y_test),
+    verbose=1
+)
+
+# -----------------------------
+# PLOT GRAPHS
+# -----------------------------
+plt.figure(figsize=(12,5))
+
+plt.subplot(1,2,1)
+plt.plot(history.history['accuracy'], label='Train')
+plt.plot(history.history['val_accuracy'], label='Val')
+plt.title(f"Accuracy ({activation_function})")
+plt.xlabel("Epoch")
+plt.ylabel("Accuracy")
+plt.legend()
+
+plt.subplot(1,2,2)
+plt.plot(history.history['loss'], label='Train')
+plt.plot(history.history['val_loss'], label='Val')
+plt.title(f"Loss ({activation_function})")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.legend()
+
+plt.show()
+
+# -----------------------------
+# FINAL ACCURACY
+# -----------------------------
+loss, acc = model.evaluate(x_test, y_test)
+print(f"Final Validation Accuracy ({activation_function}):", acc)

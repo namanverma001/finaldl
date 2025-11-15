@@ -1,0 +1,80 @@
+# ---------------------------------------------------------
+# ASSIGNMENT 8: Hyperparameter Tuning for Neural Networks
+#
+# • Train models with different learning rates, batch sizes,
+#   and hidden units.
+# • Compare their performance.
+# • Report accuracy of each configuration.
+# ---------------------------------------------------------
+
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# LOAD MNIST
+# -----------------------------
+from tensorflow.keras.datasets import mnist
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+# Normalize
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+
+# Flatten for MLP
+x_train = x_train.reshape(-1, 784)
+x_test  = x_test.reshape(-1, 784)
+
+# -----------------------------
+# DIFFERENT HYPERPARAMETER SETS
+# -----------------------------
+configs = [
+    {"lr": 0.001, "batch": 32,  "units": 64},
+    {"lr": 0.001, "batch": 64,  "units": 128},
+    {"lr": 0.0005,"batch": 32,  "units": 128}
+]
+
+results = []
+
+# -----------------------------
+# TRAIN MODELS FOR EACH CONFIG
+# -----------------------------
+for cfg in configs:
+
+    print("Training with:", cfg)
+
+    # Build model
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(cfg["units"], activation='relu', input_shape=(784,)),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+
+    # Compile
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=cfg["lr"]),
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    # Train
+    history = model.fit(
+        x_train, y_train,
+        epochs=5,
+        batch_size=cfg["batch"],
+        validation_data=(x_test, y_test),
+        verbose=0
+    )
+
+    # Evaluate
+    loss, acc = model.evaluate(x_test, y_test, verbose=0)
+    results.append((cfg, acc))
+
+    print("Accuracy:", acc, "\n")
+
+# -----------------------------
+# PRINT COMPARISON REPORT
+# -----------------------------
+print("\nFINAL ACCURACY REPORT:\n")
+for cfg, acc in results:
+    print(cfg, "---> Accuracy:", acc)
+
